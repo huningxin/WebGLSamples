@@ -1179,7 +1179,7 @@ function initialize() {
     var height = Math.abs(top - bottom);
     var xOff = width * g.net.offset[0] * g.net.offsetMult;
     var yOff = height * g.net.offset[1] * g.net.offsetMult;
-    if (g_vrDisplay && g_vrDisplay.isPresenting) {
+    if (g_vrDisplay && projectionMatrix && viewMatrix) {
       fast.matrix4.copy(projection, projectionMatrix);
       fast.matrix4.inverse(viewInverse, viewMatrix);
     } else {
@@ -1642,7 +1642,7 @@ function initialize() {
         g_vrDisplay.submitFrame();
       } else {
         gl.viewport(0, 0, canvas.width, canvas.height);
-        render(elapsedTime);
+        render(elapsedTime, g_frameData.leftProjectionMatrix, g_frameData.leftViewMatrix);
       }
     } else {
       if (!g_drawOnce) {
