@@ -13,6 +13,11 @@ tdl.require('tdl.sync');
 tdl.require('tdl.textures');
 tdl.require('tdl.webgl');
 
+const xOffset = 0;
+const yOffset = -25;
+const zOffset = 0;
+const radiusMultipler = 0.1;
+
 // globals
 var gl;                   // the gl context.
 var canvas;               // the canvas
@@ -111,7 +116,7 @@ var g_fishTable = [
     radiusRange: 25,
     tailSpeed: 10,
     heightOffset: 0,
-    heightRange: 16,
+    heightRange: 2,
     constUniforms: {
       fishLength: 10,
       fishWaveLength: 1,
@@ -127,7 +132,7 @@ var g_fishTable = [
     radiusRange: 20,
     tailSpeed: 1,
     heightOffset: 0,
-    heightRange: 16,
+    heightRange: 2,
     constUniforms: {
       fishLength: 10,
       fishWaveLength: -2,
@@ -142,8 +147,8 @@ var g_fishTable = [
     radius: 10,
     radiusRange: 20,
     tailSpeed: 3,
-    heightOffset: -8,
-    heightRange: 5,
+    heightOffset: -1,
+    heightRange: 2,
     constUniforms: {
       fishLength: 10,
       fishWaveLength: -2,
@@ -159,7 +164,7 @@ var g_fishTable = [
     radiusRange: 3,
     tailSpeed: 1.5,
     heightOffset: 0,
-    heightRange: 16,
+    heightRange: 2,
     lasers: true,
     laserRot: 0.04,
     laserOff: [0, 0.1, 9],
@@ -179,7 +184,7 @@ var g_fishTable = [
     radiusRange: 3,
     tailSpeed: 1,
     heightOffset: 0,
-    heightRange: 16,
+    heightRange: 2,
     lasers: true,
     laserRot: 0.04,
     laserOff: [0, -0.3, 9],
@@ -843,6 +848,9 @@ function handleContextRestored() {
   initialize();
 }
 
+var near = 1;
+var far = 25000;
+
 function initialize() {
   var maxViewportDims = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
 
@@ -1033,6 +1041,9 @@ function initialize() {
           model.drawPrep(constUniforms);
         }
         fast.matrix4.copy(world, object.worldMatrix);
+        world[12] += xOffset;
+        world[13] += yOffset;
+        world[14] += zOffset;
         fast.matrix4.mul(worldViewProjection, world, viewProjection);
         fast.matrix4.inverse(worldInverse, world);
         fast.matrix4.transpose(worldInverseTranspose, worldInverse);
@@ -1168,8 +1179,6 @@ function initialize() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
     */
 
-    var near = 1;
-    var far = 25000;
     var aspect = canvas.clientWidth / canvas.clientHeight;
     var top = Math.tan(math.degToRad(g.globals.fieldOfView * g.net.fovFudge) * 0.5) * near;
     var bottom = -top;
@@ -1274,7 +1283,7 @@ function initialize() {
     }
 
     // Draw Scene
-    if (g_sceneGroups.base) {
+    if (g_sceneGroups.base && g.options.base.enabled) {
       DrawGroup(g_sceneGroups.base, genericConst, genericPer);
     }
 
@@ -1300,8 +1309,8 @@ function initialize() {
         }
         fish.drawPrep(fishConst);
         var fishBaseClock = clock * f.fishSpeed;
-        var fishRadius = fishInfo.radius;
-        var fishRadiusRange = fishInfo.radiusRange;
+        var fishRadius = fishInfo.radius * radiusMultipler;
+        var fishRadiusRange = fishInfo.radiusRange * radiusMultipler;
         var fishSpeed = fishInfo.speed;
         var fishSpeedRange = fishInfo.speedRange;
         var fishTailSpeed = fishInfo.tailSpeed * f.fishTailSpeed;
@@ -1326,13 +1335,13 @@ function initialize() {
           var yClock = fishSpeedClock * fishYClock;
           var zClock = fishSpeedClock * fishZClock;
 
-          fishPosition[0] = Math.sin(xClock) * xRadius;
-          fishPosition[1] = Math.sin(yClock) * yRadius + fishHeight;
-          fishPosition[2] = Math.cos(zClock) * zRadius;
-          fishNextPosition[0] = Math.sin(xClock - 0.04) * xRadius;
-          fishNextPosition[1] = Math.sin(yClock - 0.01) * yRadius + fishHeight;
-          fishNextPosition[2] = Math.cos(zClock - 0.04) * zRadius;
-          fishPer.scale = scale;
+          fishPosition[0] = Math.sin(xClock) * xRadius + xOffset;
+          fishPosition[1] = Math.sin(yClock) * yRadius + fishHeight + yOffset;
+          fishPosition[2] = Math.cos(zClock) * zRadius + zOffset;
+          fishNextPosition[0] = Math.sin(xClock - 0.04) * xRadius + xOffset;
+          fishNextPosition[1] = Math.sin(yClock - 0.01) * yRadius + fishHeight + yOffset;
+          fishNextPosition[2] = Math.cos(zClock - 0.04) * zRadius + zOffset;
+          fishPer.scale = 0.2;
 
 //          matMul(world,
 //              matScaling(m4t0, [scale, scale, scale]),
@@ -1371,7 +1380,7 @@ function initialize() {
       }
     }
 
-    if (g_sceneGroups.seaweed) {
+    if (g_sceneGroups.seaweed && g.options.seaweed.enabled) {
       Log("--Draw Seaweed----------------");
       DrawGroup(g_sceneGroups.seaweed, seaweedConst, seaweedPer);
     }
@@ -1948,8 +1957,8 @@ VR = (function() {
       navigator.getVRDisplays().then(function(displays) {
         if (displays.length > 0) {
           g_vrDisplay = displays[0];
-          g_vrDisplay.depthNear = 0.1;
-          g_vrDisplay.depthFar = 1024.0;
+          g_vrDisplay.depthNear = near;
+          g_vrDisplay.depthFar = far;
 
           if (g_vrDisplay.capabilities.canPresent) {
             vrButton = addButton("Enter VR", "E", getCurrentUrl() + "/vr_assets/button.png", onRequestPresent);

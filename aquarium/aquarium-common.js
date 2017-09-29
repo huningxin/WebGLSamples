@@ -164,13 +164,15 @@ var g = {
   fish: {},
   innerConst: {},
   options: {
+    base: {enabled: false},
+    seaweed: {enabled: false},
     normalMaps: { enabled: false, text: 'Normal Maps' },
     reflection: { enabled: false, text: 'Reflection' },
-    tank:       { enabled: true,  text: 'Tank' },
-    museum:     { enabled: true,  text: 'Museum' },
-    fog:        { enabled: true,  text: 'Fog' },
+    tank:       { enabled: false,  text: 'Tank' },
+    museum:     { enabled: false,  text: 'Museum' },
+    fog:        { enabled: false,  text: 'Fog' },
     bubbles:    { enabled: true,  text: 'Bubbles' },
-    lightRays:  { enabled: true,  text: 'Light Rays' }
+    lightRays:  { enabled: false,  text: 'Light Rays' }
   }
 };
 

@@ -1262,7 +1262,7 @@ function initialize() {
     }
 
     // Draw Scene
-    if (g_sceneGroups.base) {
+    if (!g_sceneGroups.base) {
       DrawGroup(g_sceneGroups.base, genericConst, genericPer);
     }
 
