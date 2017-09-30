@@ -2133,16 +2133,16 @@ class ARVideoRenderer {
     let vertices = [
       -1.0,
       1.0,
-      0.0,
-      -1.0,
-      -1.0,
-      0.0,
-      1.0,
-      1.0,
-      0.0,
       1.0,
       -1.0,
-      0.0,
+      -1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      -1.0,
+      1.0,
     ];
     let f32Vertices = new Float32Array(vertices);
     gl.bufferData(gl.ARRAY_BUFFER, f32Vertices, gl.STATIC_DRAW);
