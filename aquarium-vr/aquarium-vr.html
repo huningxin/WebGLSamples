@@ -944,6 +944,30 @@ void main() {
       normalize(t.xyz));
 }
 </script>
+<script id="cameraVertexShader" type="text/something-not-javascript">
+attribute vec3 aVertexPosition;
+attribute vec2 aTextureCoord;
+
+varying vec2 vTextureCoord;
+
+void main(void) {
+  gl_Position = vec4(aVertexPosition, 1.0);
+  vTextureCoord = aTextureCoord;
+}
+</script>
+<script id="cameraFragmentShader" type="text/something-not-javascript">
+#extension GL_OES_EGL_image_external : require
+
+precision mediump float;
+
+varying vec2 vTextureCoord;
+
+uniform samplerExternalOES uSampler;
+
+void main(void) {
+  gl_FragColor = texture2D(uSampler, vTextureCoord);
+}
+</script>
 </html>
 
 

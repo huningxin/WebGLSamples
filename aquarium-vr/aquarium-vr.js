@@ -18,7 +18,7 @@ const yOffset = -25;
 const zOffset = 0;
 const radiusMultipler = 0.05;
 var near = 0.001;
-var far = 1;
+var far = 1000;
 
 // globals
 var gl;                   // the gl context.
@@ -39,6 +39,8 @@ var g_fog = true;
 var g_requestId;
 var g_frameData;
 var g_vrDisplay;
+
+var g_videorender;
 
 //g_debug = true;
 //g_drawOnce = true;
@@ -851,6 +853,8 @@ function handleContextRestored() {
 }
 
 function initialize() {
+  initVR();
+
   var maxViewportDims = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
 
   gl.enable(gl.DEPTH_TEST);
@@ -1662,6 +1666,7 @@ function initialize() {
         g_vrDisplay.submitFrame();
       } else {
         gl.viewport(0, 0, canvas.width, canvas.height);
+        g_videorender.render();
         render(elapsedTime, g_frameData.leftProjectionMatrix, g_frameData.leftViewMatrix);
       }
     } else {
@@ -1814,181 +1819,471 @@ $(function(){
   main();
 });
 
-VR = (function() {
-  "use strict";
-  var vrButton;
+var vrButton;
 
-  function getButtonContainer () {
-    var buttonContainer = document.getElementById("vr-button-container");
-    if (!buttonContainer) {
-      buttonContainer = document.createElement("div");
-      buttonContainer.id = "vr-button-container";
-      buttonContainer.style.fontFamily = "sans-serif";
-      buttonContainer.style.position = "absolute";
-      buttonContainer.style.zIndex = "999";
-      buttonContainer.style.left = "0";
-      buttonContainer.style.bottom = "0";
-      buttonContainer.style.right = "0";
-      buttonContainer.style.margin = "0";
-      buttonContainer.style.padding = "0";
-      buttonContainer.align = "right";
-      document.body.appendChild(buttonContainer);
-    }
-    return buttonContainer;
+function getButtonContainer () {
+  var buttonContainer = document.getElementById("vr-button-container");
+  if (!buttonContainer) {
+    buttonContainer = document.createElement("div");
+    buttonContainer.id = "vr-button-container";
+    buttonContainer.style.fontFamily = "sans-serif";
+    buttonContainer.style.position = "absolute";
+    buttonContainer.style.zIndex = "999";
+    buttonContainer.style.left = "0";
+    buttonContainer.style.bottom = "0";
+    buttonContainer.style.right = "0";
+    buttonContainer.style.margin = "0";
+    buttonContainer.style.padding = "0";
+    buttonContainer.align = "right";
+    document.body.appendChild(buttonContainer);
+  }
+  return buttonContainer;
+}
+
+function addButtonElement (message, key, icon) {
+  var buttonElement = document.createElement("div");
+  buttonElement.classList.add = "vr-button";
+  buttonElement.style.color = "#FFF";
+  buttonElement.style.fontWeight = "bold";
+  buttonElement.style.backgroundColor = "#888";
+  buttonElement.style.borderRadius = "5px";
+  buttonElement.style.border = "3px solid #555";
+  buttonElement.style.position = "relative";
+  buttonElement.style.display = "inline-block";
+  buttonElement.style.margin = "0.5em";
+  buttonElement.style.padding = "0.75em";
+  buttonElement.style.cursor = "pointer";
+  buttonElement.align = "center";
+
+  if (icon) {
+    buttonElement.innerHTML = "<img src='" + icon + "'/><br/>" + message;
+  } else {
+    buttonElement.innerHTML = message;
   }
 
-  function addButtonElement (message, key, icon) {
-    var buttonElement = document.createElement("div");
-    buttonElement.classList.add = "vr-button";
-    buttonElement.style.color = "#FFF";
-    buttonElement.style.fontWeight = "bold";
-    buttonElement.style.backgroundColor = "#888";
-    buttonElement.style.borderRadius = "5px";
-    buttonElement.style.border = "3px solid #555";
-    buttonElement.style.position = "relative";
-    buttonElement.style.display = "inline-block";
-    buttonElement.style.margin = "0.5em";
-    buttonElement.style.padding = "0.75em";
-    buttonElement.style.cursor = "pointer";
-    buttonElement.align = "center";
+  if (key) {
+    var keyElement = document.createElement("span");
+    keyElement.classList.add = "vr-button-accelerator";
+    keyElement.style.fontSize = "0.75em";
+    keyElement.style.fontStyle = "italic";
+    keyElement.innerHTML = " (" + key + ")";
 
-    if (icon) {
-      buttonElement.innerHTML = "<img src='" + icon + "'/><br/>" + message;
-    } else {
-      buttonElement.innerHTML = message;
-    }
-
-    if (key) {
-      var keyElement = document.createElement("span");
-      keyElement.classList.add = "vr-button-accelerator";
-      keyElement.style.fontSize = "0.75em";
-      keyElement.style.fontStyle = "italic";
-      keyElement.innerHTML = " (" + key + ")";
-
-      buttonElement.appendChild(keyElement);
-    }
-
-    getButtonContainer().appendChild(buttonElement);
-
-    return buttonElement;
+    buttonElement.appendChild(keyElement);
   }
 
-  function addButton (message, key, icon, callback) {
-    var keyListener = null;
-    if (key) {
-      var keyCode = key.charCodeAt(0);
-      keyListener = function (event) {
-        if (event.keyCode === keyCode) {
-          callback(event);
-        }
-      };
-      document.addEventListener("keydown", keyListener, false);
-    }
-    var element = addButtonElement(message, key, icon);
-    element.addEventListener("click", function (event) {
-      callback(event);
-      event.preventDefault();
-    }, false);
+  getButtonContainer().appendChild(buttonElement);
 
-    return {
-      element: element,
-      keyListener: keyListener
+  return buttonElement;
+}
+
+function addButton (message, key, icon, callback) {
+  var keyListener = null;
+  if (key) {
+    var keyCode = key.charCodeAt(0);
+    keyListener = function (event) {
+      if (event.keyCode === keyCode) {
+        callback(event);
+      }
     };
+    document.addEventListener("keydown", keyListener, false);
   }
+  var element = addButtonElement(message, key, icon);
+  element.addEventListener("click", function (event) {
+    callback(event);
+    event.preventDefault();
+  }, false);
 
-  function removeButton (button) {
-    if (!button)
-      return;
-    if (button.element.parentElement)
-      button.element.parentElement.removeChild(button.element);
-    if (button.keyListener)
-      document.removeEventListener("keydown", button.keyListener, false);
-  }
+  return {
+    element: element,
+    keyListener: keyListener
+  };
+}
 
-  function getCurrentUrl() {
-    var path = window.location.pathname;
-    return path.substring(0, path.lastIndexOf('/'));
-  }
+function removeButton (button) {
+  if (!button)
+    return;
+  if (button.element.parentElement)
+    button.element.parentElement.removeChild(button.element);
+  if (button.keyListener)
+    document.removeEventListener("keydown", button.keyListener, false);
+}
 
-  function onPresentChange() {
-    // When we begin or end presenting, the canvas should be resized
-    // to the recommended dimensions for the display.
-    onResize();
+function getCurrentUrl() {
+  var path = window.location.pathname;
+  return path.substring(0, path.lastIndexOf('/'));
+}
 
-    if (g_vrDisplay.isPresenting) {
-      if (g_vrDisplay.capabilities.hasExternalDisplay) {
-        removeButton(vrButton);
-        vrButton = addButton("Exit VR", "E", getCurrentUrl() + "/vr_assets/button.png", onExitPresent);
-      }
-    } else {
-      if (g_vrDisplay.capabilities.hasExternalDisplay) {
-        removeButton(vrButton);
-        vrButton = addButton("Enter VR", "E", getCurrentUrl() + "/vr_assets/button.png", onRequestPresent);
-      }
+function onPresentChange() {
+  // When we begin or end presenting, the canvas should be resized
+  // to the recommended dimensions for the display.
+  onResize();
+
+  if (g_vrDisplay.isPresenting) {
+    if (g_vrDisplay.capabilities.hasExternalDisplay) {
+      removeButton(vrButton);
+      vrButton = addButton("Exit VR", "E", getCurrentUrl() + "/vr_assets/button.png", onExitPresent);
+    }
+  } else {
+    if (g_vrDisplay.capabilities.hasExternalDisplay) {
+      removeButton(vrButton);
+      vrButton = addButton("Enter VR", "E", getCurrentUrl() + "/vr_assets/button.png", onRequestPresent);
     }
   }
+}
 
-  function onRequestPresent() {
-    g_vrDisplay.requestPresent([{ source: canvas }]).then(function() {}, function() {
-      console.error("request present failed.");
-    });
+function onRequestPresent() {
+  g_vrDisplay.requestPresent([{ source: canvas }]).then(function() {}, function() {
+    console.error("request present failed.");
+  });
+}
+
+function onExitPresent() {
+  if (!g_vrDisplay.isPresenting)
+    return;
+
+  g_vrDisplay.exitPresent().then(function() {}, function() {
+    console.error("exit present failed.");
+  });
+}
+
+function onResize() {
+  if (g_vrDisplay && g_vrDisplay.isPresenting) {
+    // If we're presenting we want to use the drawing buffer size
+    // recommended by the VRDisplay, since that will ensure the best
+    // results post-distortion.
+    var leftEye = g_vrDisplay.getEyeParameters("left");
+    var rightEye = g_vrDisplay.getEyeParameters("right");
+
+    canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
+    canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
+  } else {
+    // When we're not presenting, we want to change the size of the canvas
+    // to match the window dimensions.
+    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
   }
+}
 
-  function onExitPresent() {
-    if (!g_vrDisplay.isPresenting)
-      return;
+function initVR() {
+  if(navigator.getVRDisplays) {
+    g_frameData = new VRFrameData();
 
-    g_vrDisplay.exitPresent().then(function() {}, function() {
-      console.error("exit present failed.");
-    });
-  }
+    navigator.getVRDisplays().then(function(displays) {
+      if (displays.length > 0) {
+        g_vrDisplay = displays[0];
+        g_vrDisplay.depthNear = near;
+        g_vrDisplay.depthFar = far;
 
-  function onResize() {
-    if (g_vrDisplay && g_vrDisplay.isPresenting) {
-      // If we're presenting we want to use the drawing buffer size
-      // recommended by the VRDisplay, since that will ensure the best
-      // results post-distortion.
-      var leftEye = g_vrDisplay.getEyeParameters("left");
-      var rightEye = g_vrDisplay.getEyeParameters("right");
+        g_videorender = new ARVideoRenderer(g_vrDisplay, gl);
 
-      canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
-      canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
-    } else {
-      // When we're not presenting, we want to change the size of the canvas
-      // to match the window dimensions.
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-    }
-  }
-
-  function init() {
-    if(navigator.getVRDisplays) {
-      g_frameData = new VRFrameData();
-
-      navigator.getVRDisplays().then(function(displays) {
-        if (displays.length > 0) {
-          g_vrDisplay = displays[0];
-          g_vrDisplay.depthNear = near;
-          g_vrDisplay.depthFar = far;
-
-          if (g_vrDisplay.capabilities.canPresent) {
-            vrButton = addButton("Enter VR", "E", getCurrentUrl() + "/vr_assets/button.png", onRequestPresent);
-          }
-
-          window.addEventListener('vrdisplaypresentchange', onPresentChange, false);
-          window.addEventListener('vrdisplayactivate', onRequestPresent, false);
-          window.addEventListener('vrdisplaydeactivate', onExitPresent, false);
-          window.addEventListener('resize', function() {onResize();}, false);
-        } else {
-          console.log("WebVR supported, but no VRDisplays found.")
+        if (g_vrDisplay.capabilities.canPresent) {
+          vrButton = addButton("Enter VR", "E", getCurrentUrl() + "/vr_assets/button.png", onRequestPresent);
         }
-      });
-    } else if (navigator.getVRDevices) {
-      console.log("Your browser supports WebVR but not the latest version. See webvr.info for more info.");
-    } else {
-      console.log("Your browser does not support WebVR. See webvr.info for assistance");
-    }
+
+        window.addEventListener('vrdisplaypresentchange', onPresentChange, false);
+        window.addEventListener('vrdisplayactivate', onRequestPresent, false);
+        window.addEventListener('vrdisplaydeactivate', onExitPresent, false);
+        window.addEventListener('resize', function() {onResize();}, false);
+      } else {
+        console.log("WebVR supported, but no VRDisplays found.")
+      }
+    });
+  } else if (navigator.getVRDevices) {
+    console.log("Your browser supports WebVR but not the latest version. See webvr.info for more info.");
+  } else {
+    console.log("Your browser does not support WebVR. See webvr.info for assistance");
+  }
+}
+
+/**
+ * Creates and load a shader from a string, type specifies either 'vertex' or 'fragment'
+ *
+ * @param {WebGLRenderingContext} gl
+ * @param {string} str
+ * @param {string} type
+ * @return {!WebGLShader}
+ */
+function getShader(gl, str, type) {
+  let shader;
+  if (type == 'fragment') {
+    shader = gl.createShader(gl.FRAGMENT_SHADER);
+  } else if (type == 'vertex') {
+    shader = gl.createShader(gl.VERTEX_SHADER);
+  } else {
+    return null;
   }
 
-  window.addEventListener('DOMContentLoaded', init, false);
-})();
+  gl.shaderSource(shader, str);
+  gl.compileShader(shader);
+
+  const result = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+  if (!result) {
+    alert(gl.getShaderInfoLog(shader));
+    return null;
+  }
+
+  return shader;
+}
+
+/**
+ * Creates a shader program from vertex and fragment shader sources
+ *
+ * @param {WebGLRenderingContext} gl
+ * @param {string} vs
+ * @param {string} fs
+ * @return {!WebGLProgram}
+ */
+function getProgram(gl, vs, fs) {
+  const vertexShader = getShader(gl, vs, 'vertex');
+  const fragmentShader = getShader(gl, fs, 'fragment');
+  if (!fragmentShader) {
+    return null;
+  }
+
+  const shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+  gl.linkProgram(shaderProgram);
+
+  const result = gl.getProgramParameter(shaderProgram, gl.LINK_STATUS);
+  if (!result) {
+    alert('Could not initialise arview shaders');
+  }
+
+  return shaderProgram;
+}
+
+/**
+ * Calculate the correct orientation depending on the device and the camera
+ * orientations.
+ *
+ * @param {number} screenOrientation
+ * @param {number} seeThroughCameraOrientation
+ * @return {number}
+ */
+function combineOrientations(screenOrientation, seeThroughCameraOrientation) {
+  let seeThroughCameraOrientationIndex = 0;
+  switch (seeThroughCameraOrientation) {
+    case 90:
+      seeThroughCameraOrientationIndex = 1;
+      break;
+    case 180:
+      seeThroughCameraOrientationIndex = 2;
+      break;
+    case 270:
+      seeThroughCameraOrientationIndex = 3;
+      break;
+    default:
+      seeThroughCameraOrientationIndex = 0;
+      break;
+  }
+  let screenOrientationIndex = 0;
+  switch (screenOrientation) {
+    case 90:
+      screenOrientationIndex = 1;
+      break;
+    case 180:
+      screenOrientationIndex = 2;
+      break;
+    case 270:
+      screenOrientationIndex = 3;
+      break;
+    default:
+      screenOrientationIndex = 0;
+      break;
+  }
+  let ret = screenOrientationIndex - seeThroughCameraOrientationIndex;
+  if (ret < 0) {
+    ret += 4;
+  }
+  return ret % 4;
+}
+
+class ARVideoRenderer {
+  /**
+   * @param {VRDisplay} vrDisplay
+   * @param {WebGLRenderingContext} gl
+   */
+  constructor(vrDisplay, gl) {
+    this.vrDisplay = vrDisplay;
+    this.gl = gl;
+    if (this.vrDisplay) {
+      this.passThroughCamera = vrDisplay.getPassThroughCamera();
+      let vertexSource = document.getElementById('cameraVertexShader').text;
+      let fragmentSource = document.getElementById('cameraFragmentShader').text;
+      this.program = getProgram(gl, vertexSource, fragmentSource);
+    }
+
+    gl.useProgram(this.program);
+
+    // Setup a quad
+    this.vertexPositionAttribute = gl.getAttribLocation(
+      this.program,
+      'aVertexPosition'
+    );
+    this.textureCoordAttribute = gl.getAttribLocation(
+      this.program,
+      'aTextureCoord'
+    );
+
+    this.samplerUniform = gl.getUniformLocation(this.program, 'uSampler');
+
+    this.vertexPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexPositionBuffer);
+    let vertices = [
+      -1.0,
+      1.0,
+      0.0,
+      -1.0,
+      -1.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0,
+      1.0,
+      -1.0,
+      0.0,
+    ];
+    let f32Vertices = new Float32Array(vertices);
+    gl.bufferData(gl.ARRAY_BUFFER, f32Vertices, gl.STATIC_DRAW);
+    this.vertexPositionBuffer.itemSize = 3;
+    this.vertexPositionBuffer.numItems = 12;
+
+    this.textureCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+    // Precalculate different texture UV coordinates depending on the possible
+    // orientations of the device depending if there is a VRDisplay or not
+    let textureCoords = null;
+    if (this.vrDisplay) {
+      let u =
+        this.passThroughCamera.width / this.passThroughCamera.textureWidth;
+      let v =
+        this.passThroughCamera.height / this.passThroughCamera.textureHeight;
+      textureCoords = [
+        [0.0, 0.0, 0.0, v, u, 0.0, u, v],
+        [u, 0.0, 0.0, 0.0, u, v, 0.0, v],
+        [u, v, u, 0.0, 0.0, v, 0.0, 0.0],
+        [0.0, v, u, v, 0.0, 0.0, u, 0.0],
+      ];
+    } else {
+      textureCoords = [
+        [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+        [1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0],
+        [1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+      ];
+    }
+
+    this.f32TextureCoords = [];
+    for (let i = 0; i < textureCoords.length; i++) {
+      this.f32TextureCoords.push(new Float32Array(textureCoords[i]));
+    }
+    // Store the current combined orientation to check if it has changed
+    // during the update calls and use the correct texture coordinates.
+    this.combinedOrientation = combineOrientations(
+      screen.orientation.angle,
+      this.passThroughCamera.orientation
+    );
+
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      this.f32TextureCoords[this.combinedOrientation],
+      gl.STATIC_DRAW
+    );
+    this.textureCoordBuffer.itemSize = 2;
+    this.textureCoordBuffer.numItems = 8;
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+    this.indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+    let indices = [0, 1, 2, 2, 1, 3];
+    let ui16Indices = new Uint16Array(indices);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ui16Indices, gl.STATIC_DRAW);
+    this.indexBuffer.itemSize = 1;
+    this.indexBuffer.numItems = 6;
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+
+    this.texture = gl.createTexture();
+    gl.useProgram(null);
+
+    // The projection matrix will be based on an identify orthographic camera
+    this.projectionMatrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    this.mvMatrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    return this;
+  }
+
+  /**
+   * Renders the quad
+   */
+  render() {
+    let gl = this.gl;
+    gl.useProgram(this.program);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexPositionBuffer);
+    gl.enableVertexAttribArray(this.vertexPositionAttribute);
+    gl.vertexAttribPointer(
+      this.vertexPositionAttribute,
+      this.vertexPositionBuffer.itemSize,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    );
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+
+    // Check the current orientation of the device combined with the
+    // orientation of the VRSeeThroughCamera to determine the correct UV
+    // coordinates to be used.
+    let combinedOrientation = combineOrientations(
+      screen.orientation.angle,
+      this.passThroughCamera.orientation
+    );
+    if (combinedOrientation !== this.combinedOrientation) {
+      this.combinedOrientation = combinedOrientation;
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        this.f32TextureCoords[this.combinedOrientation],
+        gl.STATIC_DRAW
+      );
+    }
+    gl.enableVertexAttribArray(this.textureCoordAttribute);
+    gl.vertexAttribPointer(
+      this.textureCoordAttribute,
+      this.textureCoordBuffer.itemSize,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    );
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_EXTERNAL_OES, this.texture);
+    // Update the content of the texture in every frame.
+    gl.texImage2D(
+      gl.TEXTURE_EXTERNAL_OES,
+      0,
+      gl.RGB,
+      gl.RGB,
+      gl.UNSIGNED_BYTE,
+      this.passThroughCamera
+    );
+    gl.uniform1i(this.samplerUniform, 0);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+
+    gl.drawElements(
+      gl.TRIANGLES,
+      this.indexBuffer.numItems,
+      gl.UNSIGNED_SHORT,
+      0
+    );
+
+    // Disable enabled states to allow other render calls to correctly work
+    gl.bindTexture(gl.TEXTURE_EXTERNAL_OES, null);
+    gl.disableVertexAttribArray(this.vertexPositionAttribute);
+    gl.disableVertexAttribArray(this.textureCoordAttribute);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.useProgram(null);
+  }
+}
