@@ -171,7 +171,7 @@ var g = {
     tank:       { enabled: false,  text: 'Tank' },
     museum:     { enabled: false,  text: 'Museum' },
     fog:        { enabled: false,  text: 'Fog' },
-    bubbles:    { enabled: true,  text: 'Bubbles' },
+    bubbles:    { enabled: false,  text: 'Bubbles' },
     lightRays:  { enabled: false,  text: 'Light Rays' }
   }
 };

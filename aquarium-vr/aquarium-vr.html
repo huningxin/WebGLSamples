@@ -175,7 +175,12 @@ varying vec2 v_texCoord;
 uniform mat4 worldViewProjection;
 void main() {
   v_texCoord = texCoord;
-  gl_Position = (worldViewProjection * position);
+  mat4 scaleMat = mat4(
+    vec4(0.01, 0, 0, 0),
+    vec4(0, 0.01, 0, 0),
+    vec4(0, 0, 0.01, 0),
+    vec4(0, 0, 0, 1));
+  gl_Position = scaleMat * (worldViewProjection * position);
 }
 </script>
 <script id="texFragmentShader" type="text/something-not-javascript">
@@ -268,7 +273,12 @@ void main() {
   v_surfaceToView = (viewInverse[3] - (world * position)).xyz;
   v_binormal = (worldInverseTranspose * vec4(binormal, 0)).xyz;  // #normalMap
   v_tangent = (worldInverseTranspose * vec4(tangent, 0)).xyz;  // #normalMap
-  gl_Position = v_position;
+  mat4 scaleMat1 = mat4(
+    vec4(0.01, 0, 0, 0),
+    vec4(0, 0.01, 0, 0),
+    vec4(0, 0, 0.01, 0),
+    vec4(0, 0, 0, 1));
+  gl_Position = scaleMat1 * v_position;
 }
 
 </script>
@@ -419,7 +429,12 @@ void main() {
   v_normal = (newWorld * vec4(normal, 0)).xyz;
   v_surfaceToLight = lightWorldPos - (world * position).xyz;
   v_surfaceToView = (viewInverse[3] - (world * position)).xyz;
-  gl_Position = v_position;
+  mat4 scaleMat = mat4(
+    vec4(0.01, 0, 0, 0),
+    vec4(0, 0.01, 0, 0),
+    vec4(0, 0, 0.01, 0),
+    vec4(0, 0, 0, 1));
+  gl_Position = scaleMat * v_position;
 }
 
 </script>
@@ -480,12 +495,17 @@ varying vec3 v_normal;
 varying vec3 v_surfaceToLight;
 varying vec3 v_surfaceToView;
 void main() {
+  mat4 scaleMat = mat4(
+    vec4(0.01, 0, 0, 0),
+    vec4(0, 0.01, 0, 0),
+    vec4(0, 0, 0.01, 0),
+    vec4(0, 0, 0, 1));
   v_texCoord = texCoord;
   v_position = (worldViewProjection * position);
   v_normal = (worldInverseTranspose * vec4(normal, 0)).xyz;
   v_surfaceToLight = lightWorldPos - (world * position).xyz;
   v_surfaceToView = (viewInverse[3] - (world * position)).xyz;
-  gl_Position = v_position;
+  gl_Position = scaleMat * v_position;
 }
 
 </script>
@@ -547,6 +567,11 @@ varying vec3 v_normal;
 varying vec3 v_surfaceToLight;
 varying vec3 v_surfaceToView;
 void main() {
+  mat4 scaleMat = mat4(
+    vec4(0.01, 0, 0, 0),
+    vec4(0, 0.01, 0, 0),
+    vec4(0, 0, 0.01, 0),
+    vec4(0, 0, 0, 1));
   v_texCoord = texCoord;
   v_position = (worldViewProjection * position);
   v_normal = (worldInverseTranspose * vec4(normal, 0)).xyz;
@@ -554,7 +579,7 @@ void main() {
   v_surfaceToView = (viewInverse[3] - (world * position)).xyz;
   v_binormal = (worldInverseTranspose * vec4(binormal, 0)).xyz;  // #normalMap
   v_tangent = (worldInverseTranspose * vec4(tangent, 0)).xyz;  // #normalMap
-  gl_Position = v_position;
+  gl_Position = scaleMat * v_position;
 }
 
 </script>
@@ -628,6 +653,11 @@ varying vec3 v_normal;
 varying vec3 v_surfaceToLight;
 varying vec3 v_surfaceToView;
 void main() {
+  mat4 scaleMat = mat4(
+    vec4(0.01, 0, 0, 0),
+    vec4(0, 0.01, 0, 0),
+    vec4(0, 0, 0.01, 0),
+    vec4(0, 0, 0, 1));
   v_texCoord = texCoord;
   v_position = (worldViewProjection * position);
   v_normal = (worldInverseTranspose * vec4(normal, 0)).xyz;
@@ -635,7 +665,7 @@ void main() {
   v_surfaceToView = (viewInverse[3] - (world * position)).xyz;
   v_binormal = (worldInverseTranspose * vec4(binormal, 0)).xyz;
   v_tangent = (worldInverseTranspose * vec4(tangent, 0)).xyz;
-  gl_Position = v_position;
+  gl_Position = scaleMat * v_position;
 }
 
 </script>
@@ -712,6 +742,11 @@ varying vec3 v_normal;
 varying vec3 v_surfaceToLight;
 varying vec3 v_surfaceToView;
 void main() {
+  mat4 scaleMat = mat4(
+    vec4(0.01, 0, 0, 0),
+    vec4(0, 0.01, 0, 0),
+    vec4(0, 0, 0.01, 0),
+    vec4(0, 0, 0, 1));
   v_texCoord = texCoord;
   v_position = (worldViewProjection * position);
   v_normal = (worldInverseTranspose * vec4(normal, 0)).xyz;
@@ -719,7 +754,7 @@ void main() {
   v_surfaceToView = (viewInverse[3] - (world * position)).xyz;
   v_binormal = (worldInverseTranspose * vec4(binormal, 0)).xyz;  // #normalMap
   v_tangent = (worldInverseTranspose * vec4(tangent, 0)).xyz;  // #normalMap
-  gl_Position = v_position;
+  gl_Position = scaleMat * v_position;
 }
 
 </script>
@@ -806,6 +841,11 @@ varying vec3 v_normal;
 varying vec3 v_surfaceToLight;
 varying vec3 v_surfaceToView;
 void main() {
+  mat4 scaleMat = mat4(
+    vec4(0.01, 0, 0, 0),
+    vec4(0, 0.01, 0, 0),
+    vec4(0, 0, 0.01, 0),
+    vec4(0, 0, 0, 1));
   v_texCoord = texCoord;
   v_position = (worldViewProjection * position);
   v_normal = (worldInverseTranspose * vec4(normal, 0)).xyz;
@@ -813,7 +853,7 @@ void main() {
   v_surfaceToView = (viewInverse[3] - (world * position)).xyz;
   v_binormal = (worldInverseTranspose * vec4(binormal, 0)).xyz;  // #normalMap
   v_tangent = (worldInverseTranspose * vec4(tangent, 0)).xyz;  // #normalMap
-  gl_Position = v_position;
+  gl_Position = scaleMat * v_position;
 }
 
 </script>

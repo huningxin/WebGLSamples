@@ -16,7 +16,9 @@ tdl.require('tdl.webgl');
 const xOffset = 0;
 const yOffset = -25;
 const zOffset = 0;
-const radiusMultipler = 0.1;
+const radiusMultipler = 0.05;
+var near = 0.001;
+var far = 1;
 
 // globals
 var gl;                   // the gl context.
@@ -848,9 +850,6 @@ function handleContextRestored() {
   initialize();
 }
 
-var near = 1;
-var far = 25000;
-
 function initialize() {
   var maxViewportDims = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
 
@@ -1180,7 +1179,7 @@ function initialize() {
     */
 
     var aspect = canvas.clientWidth / canvas.clientHeight;
-    var top = Math.tan(math.degToRad(g.globals.fieldOfView * g.net.fovFudge) * 0.5) * near;
+    var top = Math.tan(math.degToRad(1 * g.net.fovFudge) * 0.5) * near;
     var bottom = -top;
     var left = aspect * bottom;
     var right = aspect * top;
@@ -1189,9 +1188,20 @@ function initialize() {
     var xOff = width * g.net.offset[0] * g.net.offsetMult;
     var yOff = height * g.net.offset[1] * g.net.offsetMult;
     if (g_vrDisplay && projectionMatrix && viewMatrix) {
-      fast.matrix4.copy(projection, projectionMatrix);
+      
+      fast.matrix4.frustum(
+        projection,
+        left + xOff,
+        right + xOff,
+        bottom + yOff,
+        top + yOff,
+        near,
+        far);
+      
+      //fast.matrix4.copy(projection, projectionMatrix);
       fast.matrix4.inverse(viewInverse, viewMatrix);
     } else {
+      /*
       fast.matrix4.frustum(
         projection,
         left + xOff,
@@ -1206,6 +1216,7 @@ function initialize() {
         eyePosition,
         target,
         up);
+        */
     }
 
     if (g.net.slave) {
