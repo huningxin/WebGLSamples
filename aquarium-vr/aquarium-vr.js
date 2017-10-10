@@ -1666,7 +1666,8 @@ function initialize() {
         g_vrDisplay.submitFrame();
       } else {
         gl.viewport(0, 0, canvas.width, canvas.height);
-        g_videorender.render();
+        if (g_videorender)
+          g_videorender.render();
         render(elapsedTime, g_frameData.leftProjectionMatrix, g_frameData.leftViewMatrix);
       }
     } else {
@@ -1974,7 +1975,9 @@ function initVR() {
         g_vrDisplay.depthNear = near;
         g_vrDisplay.depthFar = far;
 
-        g_videorender = new ARVideoRenderer(g_vrDisplay, gl);
+        if (g_vrDisplay.capabilities.hasPassThroughCamera) {
+          g_videorender = new ARVideoRenderer(g_vrDisplay, gl);
+        }
 
         if (g_vrDisplay.capabilities.canPresent) {
           vrButton = addButton("Enter VR", "E", getCurrentUrl() + "/vr_assets/button.png", onRequestPresent);
