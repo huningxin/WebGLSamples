@@ -825,7 +825,7 @@ function main() {
   tdl.webgl.registerContextRestoredHandler(canvas, handleContextRestored);
 
   g_fpsTimer = new tdl.fps.FPSTimer();
-  gl = tdl.webgl.setupWebGL(canvas, g.globals.canvasAttributes);
+  gl = tdl.webgl.setupWebGL(canvas, {alpha: true});
   if (!gl) {
     return false;
   }
@@ -1647,8 +1647,8 @@ function initialize() {
     g_fpsTimer.update(elapsedTime);
     fpsElem.innerHTML = g_fpsTimer.averageFPS;
 
-    gl.colorMask(true, true, true, true);
-    gl.clearColor(0,0.8,1,0);
+    gl.colorMask(true, true, true, false);
+    gl.clearColor(0,0,0,0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
     if (g_vrDisplay) {
@@ -1679,8 +1679,8 @@ function initialize() {
     }
 
     // Set the alpha to 255.
-    gl.colorMask(false, false, false, true);
-    gl.clearColor(0,0,0,1);
+    gl.colorMask(false, false, false, false);
+    gl.clearColor(0,0,0,0);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
