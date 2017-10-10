@@ -1262,7 +1262,7 @@ function initialize() {
     }
 
     // Draw Scene
-    if (!g_sceneGroups.base) {
+    if (!g_sceneGroups.base && g.options.base.enabled) {
       DrawGroup(g_sceneGroups.base, genericConst, genericPer);
     }
 
@@ -1359,7 +1359,7 @@ function initialize() {
       }
     }
 
-    if (g_sceneGroups.seaweed) {
+    if (g_sceneGroups.seaweed && g.options.seaweed.enabled) {
       Log("--Draw Seaweed----------------");
       DrawGroup(g_sceneGroups.seaweed, seaweedConst, seaweedPer);
     }
