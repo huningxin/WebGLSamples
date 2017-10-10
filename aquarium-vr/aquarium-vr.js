@@ -1975,7 +1975,7 @@ function initVR() {
         g_vrDisplay.depthNear = near;
         g_vrDisplay.depthFar = far;
 
-        if (g_vrDisplay.capabilities.hasPassThroughCamera) {
+        if (g_vrDisplay.capabilities.hasPassThroughCamera && !g_vrDisplay.displayName.toLowerCase().includes('arkit')) {
           g_videorender = new ARVideoRenderer(g_vrDisplay, gl);
         }
 
